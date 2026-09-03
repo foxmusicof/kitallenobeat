@@ -158,19 +158,25 @@
       <button class="modal-close" id="closeLogin" type="button" aria-label="Fechar">×</button>
       <div class="modal-logo">FOX</div>
       <h2 id="loginTitle">MINHA ÁREA</h2>
-      <p id="loginMessage">Digite o e-mail usado na compra para receber um código de acesso.</p>
+      <p id="loginMessage">Entre com o e-mail usado na compra e sua senha.</p>
 
-      <form id="emailForm">
+      <form id="loginForm">
         <label for="loginEmail">Seu e-mail</label>
         <input id="loginEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
-        <button class="modal-primary" type="submit">ENVIAR CÓDIGO</button>
+        <label for="loginPassword" style="margin-top:12px;">Sua senha</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Digite sua senha" required>
+        <button class="modal-primary" type="submit">ENTRAR</button>
+        <button class="resend-btn" id="createPasswordBtn" type="button">PRIMEIRO ACESSO / CRIAR SENHA</button>
+        <button class="resend-btn" id="forgotPasswordBtn" type="button">ESQUECI MINHA SENHA</button>
       </form>
 
-      <form id="codeForm" hidden>
-        <label for="loginCode">Código recebido por e-mail</label>
-        <input id="loginCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required>
-        <button class="modal-primary" type="submit">ENTRAR</button>
-        <button class="resend-btn" id="resendCode" type="button">REENVIAR CÓDIGO</button>
+      <form id="passwordForm" hidden>
+        <label for="newPassword">Crie sua senha</label>
+        <input id="newPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required>
+        <label for="confirmPassword" style="margin-top:12px;">Confirme sua senha</label>
+        <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Repita sua senha" required>
+        <button class="modal-primary" type="submit">CRIAR SENHA E ENTRAR</button>
+        <button class="resend-btn" id="backToLoginBtn" type="button">VOLTAR AO LOGIN</button>
       </form>
 
       <div id="accountArea" hidden>

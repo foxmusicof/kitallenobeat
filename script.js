@@ -14,16 +14,20 @@ const toast = document.getElementById("toast");
 const modal = document.getElementById("loginModal");
 const closeLogin = document.getElementById("closeLogin");
 const clientAreaBtn = document.getElementById("clientAreaBtn");
-const emailForm = document.getElementById("emailForm");
-const codeForm = document.getElementById("codeForm");
+const loginForm = document.getElementById("loginForm");
+const passwordForm = document.getElementById("passwordForm");
 const accountArea = document.getElementById("accountArea");
 const loginEmail = document.getElementById("loginEmail");
-const loginCode = document.getElementById("loginCode");
+const loginPassword = document.getElementById("loginPassword");
+const newPassword = document.getElementById("newPassword");
+const confirmPassword = document.getElementById("confirmPassword");
 const loginMessage = document.getElementById("loginMessage");
 const modalStatus = document.getElementById("modalStatus");
 const accountEmail = document.getElementById("accountEmail");
 const accessList = document.getElementById("accessList");
-const resendCode = document.getElementById("resendCode");
+const createPasswordBtn = document.getElementById("createPasswordBtn");
+const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
+const backToLoginBtn = document.getElementById("backToLoginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 let pendingProduct = null;
@@ -56,11 +60,12 @@ function openModal(productKey = null) {
     return;
   }
 
-  emailForm.hidden = false;
-  codeForm.hidden = true;
+  loginForm.hidden = false;
+  passwordForm.hidden = true;
   accountArea.hidden = true;
-  loginMessage.textContent = "Digite o e-mail usado na compra para receber um código de acesso.";
+  loginMessage.textContent = "Entre com o e-mail usado na compra e sua senha.";
   loginEmail.value = savedEmail || "";
+  loginPassword.value = "";
   setTimeout(() => loginEmail.focus(), 50);
 }
 
@@ -94,17 +99,17 @@ async function api(path, options = {}) {
   return data;
 }
 
-async function requestAccess(email) {
-  return api("/api/request-access", {
+async function loginWithPassword(email, password) {
+  return api("/api/login", {
     method: "POST",
-    body: JSON.stringify({ email })
+    body: JSON.stringify({ email, password })
   });
 }
 
-async function verifyAccess(email, code) {
-  return api("/api/verify-access", {
+async function createPassword(email, password) {
+  return api("/api/set-password", {
     method: "POST",
-    body: JSON.stringify({ email, code })
+    body: JSON.stringify({ email, password })
   });
 }
 
@@ -172,8 +177,8 @@ function renderAccess(products) {
 }
 
 async function loadAccount() {
-  emailForm.hidden = true;
-  codeForm.hidden = true;
+  loginForm.hidden = true;
+  passwordForm.hidden = true;
   accountArea.hidden = false;
   accountEmail.textContent = currentEmail;
   loginMessage.textContent = "Seus produtos com acesso ativo:";
@@ -196,9 +201,9 @@ async function loadAccount() {
   } catch (error) {
     localStorage.removeItem("fox_music_session");
     accountArea.hidden = true;
-    emailForm.hidden = false;
-    codeForm.hidden = true;
-    setStatus("Sua sessão expirou. Solicite um novo código.", true);
+    loginForm.hidden = false;
+    passwordForm.hidden = true;
+    setStatus("Sua sessão expirou. Entre novamente com sua senha.", true);
   }
 }
 
@@ -263,60 +268,21 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !modal.hidden) closeModal();
 });
 
-emailForm.addEventListener("submit", async (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-
   const email = loginEmail.value.trim().toLowerCase();
-  if (!email) return;
+  const password = loginPassword.value;
+  if (!email || !password) return;
 
-  const submit = emailForm.querySelector("button[type='submit']");
+  const submit = loginForm.querySelector("button[type='submit']");
   submit.disabled = true;
-  setStatus("Enviando seu código...");
-
+  setStatus("Entrando...");
   try {
-    await requestAccess(email);
-    currentEmail = email;
-    localStorage.setItem("fox_music_email", email);
-
-    emailForm.hidden = true;
-    codeForm.hidden = false;
-    loginMessage.textContent = `Enviamos um código para ${email}.`;
-    loginCode.value = "";
-    loginCode.focus();
-    setStatus("Código enviado. Confira seu e-mail.");
-  } catch (error) {
-    setStatus(error.message, true);
-  } finally {
-    submit.disabled = false;
-  }
-});
-
-codeForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const email = currentEmail || loginEmail.value.trim().toLowerCase();
-  const code = loginCode.value.trim();
-
-  if (!email || !/^\d{6}$/.test(code)) {
-    setStatus("Digite o código de 6 números recebido por e-mail.", true);
-    return;
-  }
-
-  const submit = codeForm.querySelector("button[type='submit']");
-  submit.disabled = true;
-  setStatus("Validando código...");
-
-  try {
-    const data = await verifyAccess(email, code);
-
-    if (!data.token) {
-      throw new Error("O servidor não retornou a sessão de acesso.");
-    }
-
+    const data = await loginWithPassword(email, password);
+    if (!data.token) throw new Error("O servidor não retornou a sessão de acesso.");
     localStorage.setItem("fox_music_session", data.token);
     localStorage.setItem("fox_music_email", email);
     currentEmail = email;
-
     await loadAccount();
     setStatus("Login realizado com sucesso.");
   } catch (error) {
@@ -326,42 +292,81 @@ codeForm.addEventListener("submit", async (event) => {
   }
 });
 
-resendCode.addEventListener("click", async () => {
-  const email = currentEmail || loginEmail.value.trim().toLowerCase();
-  if (!email) return;
+createPasswordBtn.addEventListener("click", () => {
+  const email = loginEmail.value.trim().toLowerCase();
+  if (!email) {
+    setStatus("Digite primeiro o e-mail usado na compra.", true);
+    loginEmail.focus();
+    return;
+  }
+  passwordForm.hidden = false;
+  loginForm.hidden = true;
+  newPassword.value = "";
+  confirmPassword.value = "";
+  loginMessage.textContent = "Crie uma senha para acessar seus kits sempre que quiser.";
+  newPassword.focus();
+  setStatus("");
+});
 
-  resendCode.disabled = true;
-  setStatus("Enviando um novo código...");
-
+passwordForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = loginEmail.value.trim().toLowerCase();
+  const password = newPassword.value;
+  const confirmation = confirmPassword.value;
+  if (password.length < 8) {
+    setStatus("A senha precisa ter pelo menos 8 caracteres.", true);
+    return;
+  }
+  if (password !== confirmation) {
+    setStatus("As senhas não conferem.", true);
+    return;
+  }
+  const submit = passwordForm.querySelector("button[type='submit']");
+  submit.disabled = true;
+  setStatus("Criando sua senha...");
   try {
-    await requestAccess(email);
-    loginCode.value = "";
-    loginCode.focus();
-    setStatus("Novo código enviado. Use somente o código mais recente.");
+    const data = await createPassword(email, password);
+    if (!data.token) throw new Error("O servidor não retornou a sessão de acesso.");
+    localStorage.setItem("fox_music_session", data.token);
+    localStorage.setItem("fox_music_email", email);
+    currentEmail = email;
+    await loadAccount();
+    setStatus("Senha criada. Acesso liberado.");
   } catch (error) {
     setStatus(error.message, true);
   } finally {
-    setTimeout(() => {
-      resendCode.disabled = false;
-    }, 2500);
+    submit.disabled = false;
   }
+});
+
+forgotPasswordBtn.addEventListener("click", () => {
+  setStatus("Para redefinir a senha com segurança, fale com o suporte FOX MUSIC pelo WhatsApp.");
+});
+
+backToLoginBtn.addEventListener("click", () => {
+  passwordForm.hidden = true;
+  loginForm.hidden = false;
+  loginMessage.textContent = "Entre com o e-mail usado na compra e sua senha.";
+  loginPassword.focus();
+  setStatus("");
 });
 
 logoutBtn.addEventListener("click", async () => {
   await logout();
-  emailForm.hidden = false;
-  codeForm.hidden = true;
+  loginForm.hidden = false;
+  passwordForm.hidden = true;
   accountArea.hidden = true;
   loginEmail.value = "";
-  loginCode.value = "";
-  loginMessage.textContent = "Digite o e-mail usado na compra para receber um código de acesso.";
+  loginPassword.value = "";
+  loginMessage.textContent = "Entre com o e-mail usado na compra e sua senha.";
   setStatus("Você saiu da sua conta.");
 });
 
 window.addEventListener("load", () => {
   const token = localStorage.getItem("fox_music_session");
   const email = localStorage.getItem("fox_music_email");
-  if (token && email) {
-    currentEmail = email;
+  if (token && email) currentEmail = email;
+  if (new URLSearchParams(window.location.search).get("acesso") === "1") {
+    openModal();
   }
 });
