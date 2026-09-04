@@ -1,12 +1,12 @@
 const API_BASE = "https://foxmusicof-foxmusic-gifthub-backend.contatozoh.workers.dev";
 
 const PRODUCT_INFO = {
-  bass: { name: "BASS LOOP — ALLÊ NO BEAT" },
-  gtr: { name: "GTR LOOP — ALLÊ NO BEAT" },
-  bateria: { name: "BATERIA LOOP — ALLÊ NO BEAT" },
-  sanfona: { name: "SANFONA LOOP — ALLÊ NO BEAT" },
-  sax: { name: "SAX — ALLÊ NO BEAT" },
-  todos: { name: "TODOS OS KITS — ALLÊ NO BEAT" }
+  bass: { name: "BASS LOOP — ALLÊ NO BEAT", amount: 34.99, amountLabel: "R$ 34,99", qr: "assets/pix-bass.png" },
+  gtr: { name: "GTR LOOP — ALLÊ NO BEAT", amount: 34.99, amountLabel: "R$ 34,99", qr: "assets/pix-gtr.png" },
+  bateria: { name: "BATERIA LOOP — ALLÊ NO BEAT", amount: 49.99, amountLabel: "R$ 49,99", qr: "assets/pix-bateria.png" },
+  sanfona: { name: "SANFONA LOOP — ALLÊ NO BEAT", amount: 34.99, amountLabel: "R$ 34,99", qr: "assets/pix-sanfona.png" },
+  sax: { name: "SAX — ALLÊ NO BEAT", amount: 24.99, amountLabel: "R$ 24,99", qr: "assets/pix-sax.png" },
+  todos: { name: "TODOS OS KITS — ALLÊ NO BEAT", amount: 129.00, amountLabel: "R$ 129,00", qr: "assets/pix-todos.png" }
 };
 
 const accessButtons = document.querySelectorAll(".access-btn");
@@ -212,6 +212,53 @@ async function downloadProduct(productKey) {
   } catch (error) {
     setStatus(error.message, true);
   }
+}
+
+
+// ===== COMPRA COM PIX ESTÁTICO =====
+const purchaseModal = document.getElementById("purchaseModal");
+const closePurchase = document.getElementById("closePurchase");
+const purchaseForm = document.getElementById("purchaseForm");
+const pixStep = document.getElementById("pixStep");
+const paymentSent = document.getElementById("paymentSent");
+const purchaseProduct = document.getElementById("purchaseProduct");
+const pixProduct = document.getElementById("pixProduct");
+const pixAmount = document.getElementById("pixAmount");
+const pixQr = document.getElementById("pixQr");
+const pixCopy = document.getElementById("pixCopy");
+const copyPixBtn = document.getElementById("copyPixBtn");
+const paidBtn = document.getElementById("paidBtn");
+const backPurchaseBtn = document.getElementById("backPurchaseBtn");
+const finishPurchaseBtn = document.getElementById("finishPurchaseBtn");
+let purchaseProductKey = null;
+
+function openPurchase(productKey){
+  const p=PRODUCT_INFO[productKey]; if(!p || !purchaseModal) return;
+  purchaseProductKey=productKey; purchaseModal.hidden=false; document.body.classList.add("modal-open");
+  purchaseForm.hidden=false; pixStep.hidden=true; paymentSent.hidden=true;
+  purchaseProduct.textContent=`${p.name} — ${p.amountLabel}`;
+  const saved=JSON.parse(localStorage.getItem("fox_purchase_buyer")||"{}");
+  buyerName.value=saved.name||""; buyerPhone.value=saved.phone||""; buyerEmail.value=saved.email||"";
+}
+function closePurchaseModal(){if(!purchaseModal)return;purchaseModal.hidden=true;document.body.classList.remove("modal-open");purchaseProductKey=null;}
+const buyerName=document.getElementById("buyerName"), buyerPhone=document.getElementById("buyerPhone"), buyerEmail=document.getElementById("buyerEmail");
+function showPix(){
+  const p=PRODUCT_INFO[purchaseProductKey];
+  const buyer={name:buyerName.value.trim(),phone:buyerPhone.value.trim(),email:buyerEmail.value.trim().toLowerCase()};
+  localStorage.setItem("fox_purchase_buyer",JSON.stringify(buyer));
+  pixProduct.textContent=p.name; pixAmount.textContent=p.amountLabel; pixQr.src=p.qr;
+  pixCopy.value=(window.FOX_PIX_PAYLOADS||{})[purchaseProductKey]||"Use o QR Code acima para pagar via Pix.";
+  purchaseForm.hidden=true; pixStep.hidden=false; paymentSent.hidden=true;
+}
+if(purchaseModal){
+  document.querySelectorAll(".buy-btn[data-buy-product]").forEach(btn=>btn.addEventListener("click",()=>openPurchase(btn.dataset.buyProduct)));
+  closePurchase.addEventListener("click",closePurchaseModal);
+  purchaseModal.addEventListener("click",e=>{if(e.target===purchaseModal)closePurchaseModal()});
+  purchaseForm.addEventListener("submit",e=>{e.preventDefault();if(purchaseForm.reportValidity())showPix()});
+  copyPixBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(pixCopy.value)}catch{pixCopy.select();document.execCommand("copy")}copyPixBtn.textContent="COPIADO!";setTimeout(()=>copyPixBtn.textContent="COPIAR",1600)});
+  paidBtn.addEventListener("click",()=>{paymentSent.hidden=false;pixStep.hidden=true});
+  backPurchaseBtn.addEventListener("click",()=>{pixStep.hidden=true;purchaseForm.hidden=false});
+  finishPurchaseBtn.addEventListener("click",closePurchaseModal);
 }
 
 accessButtons.forEach(button => {
