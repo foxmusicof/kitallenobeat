@@ -12,7 +12,7 @@
   <div class="ambient ambient-right"></div>
 
   <header class="topbar">
-    <a class="brand" href="#" aria-label="FOX MUSIC">
+    <a class="brand" href="https://www.foxmusic.com.br/" aria-label="FOX MUSIC" title="Ir para FOX MUSIC">
       <img class="brand-logo" src="assets/fox-logo.png" alt="FOX MUSIC">
       <div class="brand-copy">
         <div class="brand-name"><span>FOX</span> MUSIC</div>
@@ -189,6 +189,60 @@
     </div>
   </div>
 
+
+  <div class="modal-backdrop" id="purchaseModal" hidden>
+    <div class="purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchaseTitle">
+      <button class="modal-close" id="closePurchase" type="button" aria-label="Fechar">×</button>
+
+      <div id="purchaseFormArea">
+        <h2 id="purchaseTitle">FINALIZAR COMPRA</h2>
+        <p class="purchase-product" id="purchaseProduct"></p>
+
+        <form id="purchaseForm">
+          <label for="buyerName">NOME</label>
+          <input id="buyerName" type="text" autocomplete="name" placeholder="Seu nome completo" required>
+
+          <label for="buyerPhone">TELEFONE / WHATSAPP</label>
+          <input id="buyerPhone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000" required>
+
+          <label for="buyerEmail">E-MAIL</label>
+          <input id="buyerEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
+
+          <button class="modal-primary" type="submit">CONTINUAR PARA O PIX</button>
+        </form>
+      </div>
+
+      <div id="pixStep" hidden>
+        <h2>PAGAMENTO VIA PIX</h2>
+        <div class="pix-summary">
+          <span>Produto</span><strong id="pixProduct"></strong>
+          <span>Total</span><strong id="pixAmount"></strong>
+        </div>
+
+        <div class="pix-box">
+          <img id="pixQr" src="" alt="QR Code Pix">
+          <strong>ESCANEIE O QR CODE PARA PAGAR</strong>
+          <small>O valor já está preenchido para este produto.</small>
+        </div>
+
+        <div class="copy-row" style="margin-top:10px">
+          <textarea id="pixCopy" readonly aria-label="Pix Copia e Cola"></textarea>
+          <button id="copyPixBtn" type="button">COPIAR</button>
+        </div>
+
+        <button class="modal-primary" id="paidBtn" type="button">JÁ FIZ O PAGAMENTO</button>
+        <button class="resend-btn" id="backPurchaseBtn" type="button">VOLTAR</button>
+      </div>
+
+      <div class="payment-sent" id="paymentSent" hidden>
+        <div class="payment-check">✓</div>
+        <h3>PAGAMENTO INFORMADO</h3>
+        <p>Recebemos a informação de que você realizou o Pix. Nesta versão, o Pix é estático e a confirmação bancária ainda não é automática.</p>
+        <div id="productAccessArea"></div>
+        <button class="modal-primary" id="finishPurchaseBtn" type="button">FECHAR</button>
+      </div>
+    </div>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="pix-payloads.js"></script>
   <script src="script.js"></script>

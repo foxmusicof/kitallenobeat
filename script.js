@@ -193,29 +193,27 @@ async function loadAccount() {
   }
 }
 
-async function downloadProduct(productKey) {
-  const token = localStorage.getItem("fox_music_session");
-  if (!token) {
-    openModal(productKey);
-    return;
-  }
-
-  setStatus("Preparando seu download...");
-  try {
-    const response = await fetch(`${API_BASE}/api/download?product=${encodeURIComponent(productKey)}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await response.json();
-    if (!response.ok || data.ok === false) throw new Error(data.error || "Não foi possível liberar o download.");
-    if (!data.download_url) throw new Error("O servidor não retornou o link de download.");
-    window.location.href = data.download_url;
-  } catch (error) {
-    setStatus(error.message, true);
+function downloadProduct(productKey) {
+  const drive = DRIVE_LINKS[productKey];
+  if (drive) {
+    window.open(drive, "_blank", "noopener,noreferrer");
+  } else {
+    setStatus("O link do Google Drive deste produto ainda não foi configurado.", true);
   }
 }
 
-
 // ===== COMPRA COM PIX ESTÁTICO =====
+// Nesta etapa o pagamento é Pix estático. A confirmação bancária não é automática.
+// Os links do Google Drive devem ser preenchidos em DRIVE_LINKS quando forem fornecidos.
+const DRIVE_LINKS = {
+  todos: "",
+  sax: "",
+  sanfona: "",
+  bateria: "",
+  gtr: "",
+  bass: ""
+};
+
 const purchaseModal = document.getElementById("purchaseModal");
 const closePurchase = document.getElementById("closePurchase");
 const purchaseForm = document.getElementById("purchaseForm");
@@ -230,35 +228,138 @@ const copyPixBtn = document.getElementById("copyPixBtn");
 const paidBtn = document.getElementById("paidBtn");
 const backPurchaseBtn = document.getElementById("backPurchaseBtn");
 const finishPurchaseBtn = document.getElementById("finishPurchaseBtn");
+const productAccessArea = document.getElementById("productAccessArea");
+const purchaseFormArea = document.getElementById("purchaseFormArea");
+const buyerName = document.getElementById("buyerName");
+const buyerPhone = document.getElementById("buyerPhone");
+const buyerEmail = document.getElementById("buyerEmail");
 let purchaseProductKey = null;
 
 function openPurchase(productKey){
-  const p=PRODUCT_INFO[productKey]; if(!p || !purchaseModal) return;
-  purchaseProductKey=productKey; purchaseModal.hidden=false; document.body.classList.add("modal-open");
-  purchaseForm.hidden=false; pixStep.hidden=true; paymentSent.hidden=true;
-  purchaseProduct.textContent=`${p.name} — ${p.amountLabel}`;
-  const saved=JSON.parse(localStorage.getItem("fox_purchase_buyer")||"{}");
-  buyerName.value=saved.name||""; buyerPhone.value=saved.phone||""; buyerEmail.value=saved.email||"";
+  const p = PRODUCT_INFO[productKey];
+  if (!p || !purchaseModal) return;
+  purchaseProductKey = productKey;
+  purchaseModal.hidden = false;
+  document.body.classList.add("modal-open");
+  purchaseFormArea.hidden = false;
+  purchaseForm.hidden = false;
+  pixStep.hidden = true;
+  paymentSent.hidden = true;
+  purchaseProduct.textContent = `${p.name} — ${p.amountLabel}`;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem("fox_purchase_buyer") || "{}");
+    buyerName.value = saved.name || "";
+    buyerPhone.value = saved.phone || "";
+    buyerEmail.value = saved.email || "";
+  } catch {
+    buyerName.value = buyerPhone.value = buyerEmail.value = "";
+  }
+  setTimeout(() => buyerName.focus(), 50);
 }
-function closePurchaseModal(){if(!purchaseModal)return;purchaseModal.hidden=true;document.body.classList.remove("modal-open");purchaseProductKey=null;}
-const buyerName=document.getElementById("buyerName"), buyerPhone=document.getElementById("buyerPhone"), buyerEmail=document.getElementById("buyerEmail");
+
+function closePurchaseModal(){
+  if (!purchaseModal) return;
+  purchaseModal.hidden = true;
+  document.body.classList.remove("modal-open");
+  purchaseProductKey = null;
+}
+
 function showPix(){
-  const p=PRODUCT_INFO[purchaseProductKey];
-  const buyer={name:buyerName.value.trim(),phone:buyerPhone.value.trim(),email:buyerEmail.value.trim().toLowerCase()};
-  localStorage.setItem("fox_purchase_buyer",JSON.stringify(buyer));
-  pixProduct.textContent=p.name; pixAmount.textContent=p.amountLabel; pixQr.src=p.qr;
-  pixCopy.value=(window.FOX_PIX_PAYLOADS||{})[purchaseProductKey]||"Use o QR Code acima para pagar via Pix.";
-  purchaseForm.hidden=true; pixStep.hidden=false; paymentSent.hidden=true;
+  const p = PRODUCT_INFO[purchaseProductKey];
+  if (!p) return;
+
+  const buyer = {
+    name: buyerName.value.trim(),
+    phone: buyerPhone.value.trim(),
+    email: buyerEmail.value.trim().toLowerCase()
+  };
+  localStorage.setItem("fox_purchase_buyer", JSON.stringify(buyer));
+
+  pixProduct.textContent = p.name;
+  pixAmount.textContent = p.amountLabel;
+  pixQr.src = p.qr;
+  pixCopy.value = (window.FOX_PIX_PAYLOADS || {})[purchaseProductKey] || "";
+  purchaseFormArea.hidden = false;
+  purchaseForm.hidden = true;
+  pixStep.hidden = false;
+  paymentSent.hidden = true;
 }
-if(purchaseModal){
-  document.querySelectorAll(".buy-btn[data-buy-product]").forEach(btn=>btn.addEventListener("click",()=>openPurchase(btn.dataset.buyProduct)));
-  closePurchase.addEventListener("click",closePurchaseModal);
-  purchaseModal.addEventListener("click",e=>{if(e.target===purchaseModal)closePurchaseModal()});
-  purchaseForm.addEventListener("submit",e=>{e.preventDefault();if(purchaseForm.reportValidity())showPix()});
-  copyPixBtn.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(pixCopy.value)}catch{pixCopy.select();document.execCommand("copy")}copyPixBtn.textContent="COPIADO!";setTimeout(()=>copyPixBtn.textContent="COPIAR",1600)});
-  paidBtn.addEventListener("click",()=>{paymentSent.hidden=false;pixStep.hidden=true});
-  backPurchaseBtn.addEventListener("click",()=>{pixStep.hidden=true;purchaseForm.hidden=false});
-  finishPurchaseBtn.addEventListener("click",closePurchaseModal);
+
+function showPaymentSent(){
+  const p = PRODUCT_INFO[purchaseProductKey];
+  if (!p) return;
+
+  const purchases = JSON.parse(localStorage.getItem("fox_local_purchases") || "[]");
+  if (!purchases.some(x => x.productKey === purchaseProductKey)) {
+    purchases.push({
+      productKey: purchaseProductKey,
+      name: p.name,
+      email: buyerEmail.value.trim().toLowerCase(),
+      savedAt: new Date().toISOString()
+    });
+    localStorage.setItem("fox_local_purchases", JSON.stringify(purchases));
+  }
+
+  productAccessArea.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "product-access-card";
+  const title = document.createElement("strong");
+  title.textContent = p.name;
+  card.appendChild(title);
+
+  const drive = DRIVE_LINKS[purchaseProductKey];
+  if (drive) {
+    const a = document.createElement("a");
+    a.href = drive;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "ACESSAR MEU KIT";
+    card.appendChild(a);
+  } else {
+    const missing = document.createElement("div");
+    missing.className = "drive-missing";
+    missing.textContent = "O link do Google Drive deste produto ainda não foi configurado.";
+    card.appendChild(missing);
+  }
+
+  productAccessArea.appendChild(card);
+  pixStep.hidden = true;
+  paymentSent.hidden = false;
+}
+
+if (purchaseModal) {
+  document.querySelectorAll(".buy-btn[data-buy-product]").forEach(btn => {
+    btn.addEventListener("click", () => openPurchase(btn.dataset.buyProduct));
+  });
+
+  closePurchase.addEventListener("click", closePurchaseModal);
+  purchaseModal.addEventListener("click", e => {
+    if (e.target === purchaseModal) closePurchaseModal();
+  });
+
+  purchaseForm.addEventListener("submit", e => {
+    e.preventDefault();
+    if (purchaseForm.reportValidity()) showPix();
+  });
+
+  copyPixBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(pixCopy.value);
+    } catch {
+      pixCopy.select();
+      document.execCommand("copy");
+    }
+    copyPixBtn.textContent = "COPIADO!";
+    setTimeout(() => copyPixBtn.textContent = "COPIAR", 1600);
+  });
+
+  paidBtn.addEventListener("click", showPaymentSent);
+  backPurchaseBtn.addEventListener("click", () => {
+    pixStep.hidden = true;
+    purchaseForm.hidden = false;
+  });
+  finishPurchaseBtn.addEventListener("click", closePurchaseModal);
 }
 
 accessButtons.forEach(button => {
