@@ -328,40 +328,6 @@ function showPaymentSent(){
   paymentSent.hidden = false;
 }
 
-if (purchaseModal) {
-  document.querySelectorAll(".buy-btn[data-buy-product]").forEach(btn => {
-    btn.addEventListener("click", () => openPurchase(btn.dataset.buyProduct));
-  });
-
-  closePurchase.addEventListener("click", closePurchaseModal);
-  purchaseModal.addEventListener("click", e => {
-    if (e.target === purchaseModal) closePurchaseModal();
-  });
-
-  purchaseForm.addEventListener("submit", e => {
-    e.preventDefault();
-    if (purchaseForm.reportValidity()) showPix();
-  });
-
-  copyPixBtn.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(pixCopy.value);
-    } catch {
-      pixCopy.select();
-      document.execCommand("copy");
-    }
-    copyPixBtn.textContent = "COPIADO!";
-    setTimeout(() => copyPixBtn.textContent = "COPIAR", 1600);
-  });
-
-  paidBtn.addEventListener("click", showPaymentSent);
-  backPurchaseBtn.addEventListener("click", () => {
-    pixStep.hidden = true;
-    purchaseForm.hidden = false;
-  });
-  finishPurchaseBtn.addEventListener("click", closePurchaseModal);
-}
-
 accessButtons.forEach(button => {
   button.addEventListener("click", () => openModal(button.dataset.product));
 });
