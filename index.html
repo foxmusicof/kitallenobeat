@@ -12,8 +12,8 @@
   <div class="ambient ambient-right"></div>
 
   <header class="topbar">
-    <a class="brand" href="https://www.foxmusic.com.br/" aria-label="FOX MUSIC" title="Ir para FOX MUSIC">
-      <img class="brand-logo" src="assets/fox-logo.png" alt="FOX MUSIC">
+    <a class="brand" href="#" aria-label="FOX MUSIC">
+      <a href="https://www.foxmusic.com.br/" aria-label="FOX MUSIC"><img class="brand-logo" src="assets/fox-logo.png" alt="FOX MUSIC"></a>
       <div class="brand-copy">
         <div class="brand-name"><span>FOX</span> MUSIC</div>
         <div class="brand-sub">VS PROFESSIONAL PLAYBACKS</div>
@@ -171,7 +171,6 @@
       </form>
 
       <form id="passwordForm" hidden>
-        <input id="registerEmail" type="email" hidden>
         <label for="newPassword">Crie sua senha</label>
         <input id="newPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required>
         <label for="confirmPassword" style="margin-top:12px;">Confirme sua senha</label>
@@ -190,63 +189,124 @@
     </div>
   </div>
 
-
-  <div class="modal-backdrop" id="purchaseModal" hidden>
-    <div class="purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchaseTitle">
-      <button class="modal-close" id="closePurchase" type="button" aria-label="Fechar">×</button>
-
-      <div id="purchaseFormArea">
-        <h2 id="purchaseTitle">FINALIZAR COMPRA</h2>
-        <p class="purchase-product" id="purchaseProduct"></p>
-
-        <form id="purchaseForm">
-          <label for="buyerName">NOME</label>
-          <input id="buyerName" type="text" autocomplete="name" placeholder="Seu nome completo" required>
-
-          <label for="buyerPhone">TELEFONE / WHATSAPP</label>
-          <input id="buyerPhone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000" required>
-
-          <label for="buyerEmail">E-MAIL</label>
-          <input id="buyerEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
-
-          <button class="modal-primary" type="submit">CONTINUAR PARA O PIX</button>
-        </form>
-      </div>
-
-      <div id="pixStep" hidden>
-        <h2>PAGAMENTO VIA PIX</h2>
-        <div class="pix-summary">
-          <span>Produto</span><strong id="pixProduct"></strong>
-          <span>Total</span><strong id="pixAmount"></strong>
-        </div>
-
-        <div class="pix-box">
-          <img id="pixQr" src="" alt="QR Code Pix">
-          <strong>ESCANEIE O QR CODE PARA PAGAR</strong>
-          <small>O valor já está preenchido para este produto.</small>
-        </div>
-
-        <div class="copy-row" style="margin-top:10px">
-          <textarea id="pixCopy" readonly aria-label="Pix Copia e Cola"></textarea>
-          <button id="copyPixBtn" type="button">COPIAR</button>
-        </div>
-
-        <button class="modal-primary" id="paidBtn" type="button">JÁ FIZ O PAGAMENTO</button>
-        <button class="resend-btn" id="backPurchaseBtn" type="button">VOLTAR</button>
-      </div>
-
-      <div class="payment-sent" id="paymentSent" hidden>
-        <div class="payment-check">✓</div>
-        <h3>PAGAMENTO INFORMADO</h3>
-        <p>Recebemos a informação de que você realizou o Pix. Nesta versão, o Pix é estático e a confirmação bancária ainda não é automática.</p>
-        <div id="productAccessArea"></div>
-        <button class="modal-primary" id="finishPurchaseBtn" type="button">FECHAR</button>
-      </div>
-    </div>
-  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="pix-payloads.js"></script>
   <script src="script.js"></script>
-  <script src="purchase-fix.js"></script>
-</body>
+
+<div id="foxPurchaseModal" class="fox-purchase-overlay" hidden>
+  <div class="fox-purchase-modal" role="dialog" aria-modal="true">
+    <button type="button" id="foxPurchaseClose" class="fox-purchase-close">×</button>
+    <h2 id="foxPurchaseTitle">FINALIZAR COMPRA</h2>
+    <p id="foxPurchaseProduct"></p>
+
+    <form id="foxBuyerForm">
+      <label>NOME</label>
+      <input id="foxBuyerName" type="text" required placeholder="Seu nome completo">
+      <label>TELEFONE / WHATSAPP</label>
+      <input id="foxBuyerPhone" type="tel" required placeholder="(00) 00000-0000">
+      <label>E-MAIL</label>
+      <input id="foxBuyerEmail" type="email" required placeholder="seuemail@exemplo.com">
+      <button type="submit" class="fox-primary">CONTINUAR PARA O PIX</button>
+    </form>
+
+    <section id="foxPixStep" hidden>
+      <h3>PAGAMENTO VIA PIX</h3>
+      <div class="fox-summary"><span>Produto</span><strong id="foxPixProduct"></strong><span>Total</span><strong id="foxPixAmount"></strong></div>
+      <img id="foxPixQr" class="fox-pix-qr" alt="QR Code Pix">
+      <textarea id="foxPixCopy" readonly></textarea>
+      <button type="button" id="foxCopyPix" class="fox-primary">COPIAR PIX</button>
+      <button type="button" id="foxPaid" class="fox-primary">JÁ FIZ O PAGAMENTO</button>
+      <button type="button" id="foxBack" class="fox-secondary">VOLTAR</button>
+    </section>
+
+    <section id="foxPaidStep" hidden>
+      <div class="fox-check">✓</div>
+      <h3>PAGAMENTO INFORMADO</h3>
+      <p>O Pix foi informado. A confirmação bancária automática ainda não está integrada.</p>
+      <div id="foxAccess"></div>
+      <button type="button" id="foxFinish" class="fox-primary">FECHAR</button>
+    </section>
+  </div>
+</div>
+
+
+<style>
+.fox-purchase-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999999}
+.fox-purchase-overlay[hidden]{display:none!important}
+.fox-purchase-modal{position:relative;width:min(520px,100%);max-height:92vh;overflow:auto;background:#111;color:#fff;border:1px solid #ff6a00;border-radius:16px;padding:28px;box-shadow:0 25px 90px #000}
+.fox-purchase-close{position:absolute;right:12px;top:8px;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
+.fox-purchase-modal h2,.fox-purchase-modal h3{text-align:center;margin-top:0}
+.fox-purchase-modal label{display:block;font-size:11px;font-weight:800;margin:12px 0 6px}
+.fox-purchase-modal input,.fox-purchase-modal textarea{width:100%;padding:13px;border-radius:8px;border:1px solid #555;background:#090909;color:#fff;font:inherit}
+.fox-purchase-modal textarea{min-height:90px;resize:vertical;margin:14px 0}
+.fox-primary,.fox-secondary{width:100%;padding:14px;border-radius:9px;font-weight:900;cursor:pointer;margin-top:12px}
+.fox-primary{background:#ff6a00;color:#000;border:1px solid #ff6a00}.fox-secondary{background:transparent;color:#fff;border:1px solid #666}
+.fox-pix-qr{display:block;width:min(280px,100%);margin:15px auto;background:#fff;padding:10px;border-radius:10px}
+.fox-summary{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px;background:#1a1a1a;border-radius:9px}
+.fox-check{font-size:50px;text-align:center;color:#ff6a00}
+.fox-access-card{margin-top:15px;padding:15px;border:1px solid #444;border-radius:10px}
+.fox-access-card a{display:block;margin-top:12px;padding:12px;background:#ff6a00;color:#000;text-align:center;border-radius:8px;text-decoration:none;font-weight:900}
+</style>
+
+<script>
+(function(){
+"use strict";
+const P={
+ bass:{name:"BASS LOOP — ALLÊ NO BEAT",amount:"R$ 34,99",qr:"assets/pix-bass.png"},
+ gtr:{name:"GTR LOOP — ALLÊ NO BEAT",amount:"R$ 34,99",qr:"assets/pix-gtr.png"},
+ bateria:{name:"BATERIA LOOP — ALLÊ NO BEAT",amount:"R$ 49,99",qr:"assets/pix-bateria.png"},
+ sanfona:{name:"SANFONA LOOP — ALLÊ NO BEAT",amount:"R$ 34,99",qr:"assets/pix-sanfona.png"},
+ sax:{name:"SAX — ALLÊ NO BEAT",amount:"R$ 24,99",qr:"assets/pix-sax.png"},
+ todos:{name:"TODOS OS KITS — ALLÊ NO BEAT",amount:"R$ 129,00",qr:"assets/pix-todos.png"}
+};
+const PIX={'bass': '00020126440014BR.GOV.BCB.PIX0114458749500001830204BASS520400005303986540534.995802BR5912ALLE NO BEAT6015SAO JOAO DO RIO62080504BASS63040938', 'gtr': '00020126430014BR.GOV.BCB.PIX0114458749500001830203GTR520400005303986540534.995802BR5912ALLE NO BEAT6015SAO JOAO DO RIO62070503GTR6304A2A7', 'bateria': '00020126470014BR.GOV.BCB.PIX0114458749500001830207BATERIA520400005303986540549.995802BR5912ALLE NO BEAT6015SAO JOAO DO RIO62110507BATERIA630456EB', 'sanfona': '00020126470014BR.GOV.BCB.PIX0114458749500001830207SANFONA520400005303986540534.995802BR5912ALLE NO BEAT6015SAO JOAO DO RIO62110507SANFONA630448DD', 'sax': '00020126430014BR.GOV.BCB.PIX0114458749500001830203SAX520400005303986540524.995802BR5912ALLE NO BEAT6015SAO JOAO DO RIO62070503SAX6304E47C', 'todos': '00020126450014BR.GOV.BCB.PIX0114458749500001830205TODOS5204000053039865406129.005802BR5912ALLE NO BEAT6015SAO JOAO DO RIO62090505TODOS630423A1'};
+const DRIVE={bass:"",gtr:"",bateria:"",sanfona:"",sax:"",todos:""};
+function ready(){
+ const modal=document.getElementById("foxPurchaseModal");
+ if(!modal)return;
+ const form=document.getElementById("foxBuyerForm"), pix=document.getElementById("foxPixStep"), paid=document.getElementById("foxPaidStep");
+ let key=null;
+ const $=id=>document.getElementById(id);
+ function open(k){
+  if(!P[k])return; key=k; modal.hidden=false; document.body.classList.add("modal-open");
+  $("foxPurchaseTitle").textContent="FINALIZAR COMPRA";
+  $("foxPurchaseProduct").textContent=P[k].name+" — "+P[k].amount;
+  form.hidden=false; pix.hidden=true; paid.hidden=true;
+ }
+ function close(){modal.hidden=true;document.body.classList.remove("modal-open");key=null}
+ document.querySelectorAll(".buy-btn[data-buy-product]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();open(b.dataset.buyProduct)}));
+ $("foxPurchaseClose").onclick=close;
+ modal.addEventListener("click",e=>{if(e.target===modal)close()});
+ form.addEventListener("submit",e=>{
+  e.preventDefault();
+  if(!form.checkValidity()){form.reportValidity();return}
+  localStorage.setItem("fox_buyer",JSON.stringify({name:$("foxBuyerName").value,phone:$("foxBuyerPhone").value,email:$("foxBuyerEmail").value}));
+  $("foxPixProduct").textContent=P[key].name;
+  $("foxPixAmount").textContent=P[key].amount;
+  $("foxPixQr").src=P[key].qr;
+  $("foxPixCopy").value=PIX[key]||"";
+  form.hidden=true;pix.hidden=false;paid.hidden=true;
+ });
+ $("foxCopyPix").onclick=async()=>{
+  const t=$("foxPixCopy"); try{await navigator.clipboard.writeText(t.value)}catch(_){t.focus();t.select();document.execCommand("copy")}
+  $("foxCopyPix").textContent="COPIADO!";
+  setTimeout(()=>$("foxCopyPix").textContent="COPIAR PIX",1500);
+ };
+ $("foxPaid").onclick=()=>{
+  const a=$("foxAccess"); a.innerHTML="";
+  const box=document.createElement("div"); box.className="fox-access-card";
+  const strong=document.createElement("strong"); strong.textContent=P[key].name; box.appendChild(strong);
+  if(DRIVE[key]){
+   const link=document.createElement("a");link.href=DRIVE[key];link.target="_blank";link.rel="noopener";link.textContent="ACESSAR MEU KIT";box.appendChild(link);
+  }else{
+   const x=document.createElement("p");x.textContent="O link do Google Drive ainda não foi configurado.";box.appendChild(x);
+  }
+  a.appendChild(box);pix.hidden=true;paid.hidden=false;
+ };
+ $("foxBack").onclick=()=>{pix.hidden=true;form.hidden=false};
+ $("foxFinish").onclick=close;
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!modal.hidden)close()});
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ready);else ready();
+})();
+</script></body>
 </html>
